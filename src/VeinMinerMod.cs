@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
@@ -6,8 +7,8 @@ using Vintagestory.API.Server;
 [assembly: Vintagestory.API.Common.ModInfo(
     name: "Vein Miner",
     modID: "veinminer",
-    Version = "1.1.0",
-    Description = "Hold sneak while breaking a block to mine the entire connected vein. Configurable block list.",
+    Version = "1.2.0",
+    Description = "Hold sneak while breaking a block to activate the selected mining mode. Configurable via F7.",
     Authors = new[] { "fuba" }
 )]
 
@@ -76,16 +77,25 @@ namespace VeinMiner
             if (!byPlayer.Entity.Controls.Sneak) return;
             if (breaking.Contains(blockSel.Position)) return;
 
-            Block brokenBlock = sapi!.World.GetBlock(oldblockId);
-            if (brokenBlock?.Code == null) return;
-
             var cfg = GetPlayerConfig(byPlayer.PlayerUID);
-            if (!IsAllowed(brokenBlock, cfg)) return;
+
+            List<BlockPos> toBreak;
 
             ItemSlot? toolSlot = byPlayer.InventoryManager?.ActiveHotbarSlot;
-            BlockPos dropOrigin = blockSel.Position.Copy();
+            int toolTier = toolSlot?.Itemstack?.Collectible?.ToolTier ?? 0;
 
-            var toBreak = FindConnectedBlocks(blockSel.Position, brokenBlock.Code.ToString(), cfg.MaxBlocks);
+            if (cfg.Mode == MiningMode.Vein)
+            {
+                Block brokenBlock = sapi!.World.GetBlock(oldblockId);
+                if (brokenBlock?.Code == null) return;
+                if (!IsAllowed(brokenBlock, cfg)) return;
+                toBreak = FindConnectedBlocks(blockSel.Position, brokenBlock.Code.ToString(), cfg.MaxBlocks);
+            }
+            else
+            {
+                toBreak = FindTunnelBlocks(blockSel, byPlayer, cfg);
+            }
+
             if (toBreak.Count == 0) return;
 
             foreach (BlockPos pos in toBreak)
@@ -93,12 +103,12 @@ namespace VeinMiner
                 breaking.Add(pos);
                 try
                 {
-                    Block blockAtPos = sapi.World.BlockAccessor.GetBlock(pos);
+                    Block blockAtPos = sapi!.World.BlockAccessor.GetBlock(pos);
                     if (blockAtPos == null || blockAtPos.Id == 0) continue;
+                    if (blockAtPos.RequiredMiningTier > toolTier) continue;
 
                     // OnBlockBroken runs the full drop pipeline (BlockBehaviors included),
                     // so ore blocks yield ore items instead of the raw block.
-                    // Drops spawn at each block's position — we skip the manual SpawnItemEntity.
                     blockAtPos.OnBlockBroken(sapi.World, pos, byPlayer);
 
                     sapi.World.BlockAccessor.SetBlock(0, pos);
@@ -115,6 +125,93 @@ namespace VeinMiner
                     breaking.Remove(pos);
                 }
             }
+        }
+
+        // Tunnel modes: break a shaped tunnel in the player's facing direction.
+        // MaxBlocks acts as tunnel depth (steps). Does not check block type prefixes.
+        private List<BlockPos> FindTunnelBlocks(BlockSelection blockSel, IServerPlayer player, VeinMinerConfig cfg)
+        {
+            // The face the player hit is facing toward them, so its opposite is the dig direction.
+            // For non-horizontal faces (e.g. player looks down at the floor), derive facing from yaw:
+            // in VS, ViewVector = (sin(yaw), ..., cos(yaw)), so south=0, east=π/2, north=π, west=3π/2.
+            BlockFacing facing;
+            if (blockSel.Face.IsHorizontal)
+            {
+                facing = blockSel.Face.Opposite;
+            }
+            else
+            {
+                float yaw = player.Entity.Pos.Yaw;
+                double fx = Math.Sin(yaw);
+                double fz = Math.Cos(yaw);
+                if (Math.Abs(fx) >= Math.Abs(fz))
+                    facing = fx > 0 ? BlockFacing.EAST : BlockFacing.WEST;
+                else
+                    facing = fz > 0 ? BlockFacing.SOUTH : BlockFacing.NORTH;
+            }
+
+            BlockPos origin = blockSel.Position;
+            int dx = facing.Normali.X;
+            int dz = facing.Normali.Z;
+
+            var result = new List<BlockPos>();
+            int depth = cfg.MaxBlocks;
+
+            switch (cfg.Mode)
+            {
+                case MiningMode.Tunnel1x1:
+                    for (int i = 0; i < depth; i++)
+                        TryAdd(origin.AddCopy(dx * i, 0, dz * i), result);
+                    break;
+
+                case MiningMode.Tunnel1x2:
+                    for (int i = 0; i < depth; i++)
+                    {
+                        TryAdd(origin.AddCopy(dx * i, 0, dz * i), result);
+                        TryAdd(origin.AddCopy(dx * i, 1, dz * i), result);
+                    }
+                    break;
+
+                case MiningMode.Tunnel3x3:
+                {
+                    // perpendicular to facing in the horizontal plane
+                    int px = dz, pz = -dx;
+                    for (int i = 0; i < depth; i++)
+                        for (int p = -1; p <= 1; p++)
+                            for (int h = -1; h <= 1; h++)
+                                TryAdd(origin.AddCopy(dx * i + px * p, h, dz * i + pz * p), result);
+                    break;
+                }
+
+                case MiningMode.MiningTunnel:
+                    // Staircase going down: each step descends 1 block.
+                    // Break head-level (Y-i) and feet-level (Y-i-1) so the 2-block clearance is below origin.
+                    for (int i = 0; i < depth; i++)
+                    {
+                        TryAdd(origin.AddCopy(dx * i, -i,     dz * i), result);
+                        TryAdd(origin.AddCopy(dx * i, -i - 1, dz * i), result);
+                    }
+                    break;
+
+                case MiningMode.EscapeTunnel:
+                    // Staircase going up: each step rises 1 block.
+                    // Break feet-level (Y+i-1) and head-level (Y+i) so clearance is centered on the climb.
+                    for (int i = 0; i < depth; i++)
+                    {
+                        TryAdd(origin.AddCopy(dx * i, i - 1, dz * i), result);
+                        TryAdd(origin.AddCopy(dx * i, i,     dz * i), result);
+                    }
+                    break;
+            }
+
+            return result;
+        }
+
+        private void TryAdd(BlockPos pos, List<BlockPos> result)
+        {
+            Block block = sapi!.World.BlockAccessor.GetBlock(pos);
+            if (block != null && block.Id != 0)
+                result.Add(pos.Copy());
         }
 
         private List<BlockPos> FindConnectedBlocks(BlockPos origin, string targetCode, int maxBlocks)

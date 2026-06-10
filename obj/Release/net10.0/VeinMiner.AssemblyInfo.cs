@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VeinMiner")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+243f6283c8a84b8e351464de47eef4c24e031afb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e1b7dcddf08cba912684357ce2dab3cfe5ffcf20")]
 [assembly: System.Reflection.AssemblyProductAttribute("VeinMiner")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VeinMiner")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

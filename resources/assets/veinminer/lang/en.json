@@ -1,7 +1,14 @@
 {
   "gui-title": "Vein Miner — Settings",
   "gui-prefixes-label": "Allowed block prefixes (one per line):",
-  "gui-maxblocks-label": "Maximum blocks:",
+  "gui-maxblocks-label": "Maximum blocks / depth:",
+  "gui-mode-label": "Mining mode:",
+  "gui-mode-vein": "Vein",
+  "gui-mode-tunnel1x1": "Tunnel 1×1",
+  "gui-mode-tunnel1x2": "Tunnel 1×2",
+  "gui-mode-tunnel3x3": "Tunnel 3×3",
+  "gui-mode-miningtunnel": "Mining Tunnel (↓)",
+  "gui-mode-escapetunnel": "Escape Tunnel (↑)",
   "gui-save": "Save",
   "gui-close": "Close",
   "hotkey-name": "Open VeinMiner Settings"
