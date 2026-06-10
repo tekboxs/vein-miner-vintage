@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AssemblyName>VeinMiner</AssemblyName>
+    <RootNamespace>VeinMiner</RootNamespace>
+    <!-- Fallback to default install path if env var not set -->
+    <VSInstall Condition="'$(VINTAGE_STORY)' == ''">C:\Users\fuba\AppData\Roaming\Vintagestory</VSInstall>
+    <VSInstall Condition="'$(VINTAGE_STORY)' != ''">$(VINTAGE_STORY)</VSInstall>
+    <VSData Condition="'$(VINTAGE_STORY_DATA)' == ''">$(APPDATA)\VintagestoryData</VSData>
+    <VSData Condition="'$(VINTAGE_STORY_DATA)' != ''">$(VINTAGE_STORY_DATA)</VSData>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="VintagestoryAPI">
+      <HintPath>$(VSInstall)\VintagestoryAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>$(VSInstall)\Lib\protobuf-net.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Auto-copy the compiled DLL to the Mods folder for quick testing -->
+  <Target Name="CopyToMods" AfterTargets="Build">
+    <Copy
+      SourceFiles="$(OutputPath)$(AssemblyName).dll"
+      DestinationFolder="$(VSData)\Mods"
+      SkipUnchangedFiles="true"
+      Condition="Exists('$(VSData)\Mods')"
+    />
+    <Message Text="Copied $(AssemblyName).dll to $(VSData)\Mods" Importance="high" Condition="Exists('$(VSData)\Mods')" />
+  </Target>
+
+</Project>

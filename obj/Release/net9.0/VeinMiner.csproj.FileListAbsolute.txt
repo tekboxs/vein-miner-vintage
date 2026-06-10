@@ -1,0 +1,5 @@
+C:\Users\fuba\Documents\projects\vein-miner-vintage\obj\Release\net9.0\VeinMiner.csproj.AssemblyReference.cache
+C:\Users\fuba\Documents\projects\vein-miner-vintage\obj\Release\net9.0\VeinMiner.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\fuba\Documents\projects\vein-miner-vintage\obj\Release\net9.0\VeinMiner.AssemblyInfoInputs.cache
+C:\Users\fuba\Documents\projects\vein-miner-vintage\obj\Release\net9.0\VeinMiner.AssemblyInfo.cs
+C:\Users\fuba\Documents\projects\vein-miner-vintage\obj\Release\net9.0\VeinMiner.csproj.CoreCompileInputs.cache

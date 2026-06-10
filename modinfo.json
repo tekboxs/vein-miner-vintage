@@ -1,0 +1,12 @@
+{
+  "type": "code",
+  "modId": "veinminer",
+  "name": "Vein Miner",
+  "version": "1.0.0",
+  "description": "Hold sneak while breaking an ore to mine the entire connected vein at once. All drops fall at the break point. Block whitelist configurable via F7.",
+  "authors": [ "fuba" ],
+  "dependencies": {
+    "game": "1.22.0"
+  },
+  "website": ""
+}
