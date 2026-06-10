@@ -6,7 +6,7 @@ using Vintagestory.API.Server;
 [assembly: Vintagestory.API.Common.ModInfo(
     name: "Vein Miner",
     modID: "veinminer",
-    Version = "1.0.0",
+    Version = "1.1.0",
     Description = "Hold sneak while breaking a block to mine the entire connected vein. Configurable block list.",
     Authors = new[] { "fuba" }
 )]
@@ -43,6 +43,8 @@ namespace VeinMiner
         {
             sapi = api;
             defaultConfig = api.LoadModConfig<VeinMinerConfig>("veinminer.json") ?? new VeinMinerConfig();
+            if (defaultConfig.AllowedBlockPrefixes.Count == 0)
+                defaultConfig.AllowedBlockPrefixes = new() { "game:ore-" };
             api.StoreModConfig(defaultConfig, "veinminer.json");
 
             playerConfigs = api.LoadModConfig<Dictionary<string, VeinMinerConfig>>("veinminer-players.json") ?? new();
@@ -92,20 +94,15 @@ namespace VeinMiner
                 try
                 {
                     Block blockAtPos = sapi.World.BlockAccessor.GetBlock(pos);
+                    if (blockAtPos == null || blockAtPos.Id == 0) continue;
 
-                    // Collect drops directly into player inventory
-                    ItemStack[] drops = blockAtPos.GetDrops(sapi.World, pos, byPlayer, 1f);
+                    // OnBlockBroken runs the full drop pipeline (BlockBehaviors included),
+                    // so ore blocks yield ore items instead of the raw block.
+                    // Drops spawn at each block's position — we skip the manual SpawnItemEntity.
+                    blockAtPos.OnBlockBroken(sapi.World, pos, byPlayer);
+
                     sapi.World.BlockAccessor.SetBlock(0, pos);
                     sapi.World.BlockAccessor.TriggerNeighbourBlockUpdate(pos);
-
-                    if (drops != null)
-                    {
-                        foreach (ItemStack drop in drops)
-                        {
-                            if (drop == null) continue;
-                            sapi.World.SpawnItemEntity(drop, dropOrigin, null);
-                        }
-                    }
 
                     if (toolSlot?.Itemstack != null)
                     {

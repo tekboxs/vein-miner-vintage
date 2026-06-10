@@ -1,8 +1,8 @@
 {
-  "veinminer:gui-title": "Vein Miner — Configurações",
-  "veinminer:gui-prefixes-label": "Prefixos de blocos permitidos (um por linha):",
-  "veinminer:gui-maxblocks-label": "Máximo de blocos:",
-  "veinminer:gui-save": "Salvar",
-  "veinminer:gui-close": "Fechar",
-  "veinminer:hotkey-name": "Abrir Configurações do VeinMiner"
+  "gui-title": "Vein Miner — Configurações",
+  "gui-prefixes-label": "Prefixos de blocos permitidos (um por linha):",
+  "gui-maxblocks-label": "Máximo de blocos:",
+  "gui-save": "Salvar",
+  "gui-close": "Fechar",
+  "hotkey-name": "Abrir Configurações do VeinMiner"
 }

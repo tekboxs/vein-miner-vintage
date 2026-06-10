@@ -23,24 +23,34 @@
     </Reference>
   </ItemGroup>
 
-  <!-- Auto-copy DLL + assets to Mods folder for quick testing -->
+  <!-- Auto-copy DLL + assets into a folder mod structure for quick testing -->
   <Target Name="CopyToMods" AfterTargets="Build">
+    <PropertyGroup>
+      <ModFolder>$(VSData)\Mods\veinminer</ModFolder>
+    </PropertyGroup>
+    <MakeDir Directories="$(ModFolder)" Condition="Exists('$(VSData)\Mods')" />
     <Copy
       SourceFiles="$(OutputPath)$(AssemblyName).dll"
-      DestinationFolder="$(VSData)\Mods"
+      DestinationFolder="$(ModFolder)"
       SkipUnchangedFiles="true"
+      Condition="Exists('$(VSData)\Mods')"
+    />
+    <Copy
+      SourceFiles="modinfo.json"
+      DestinationFolder="$(ModFolder)"
+      SkipUnchangedFiles="false"
       Condition="Exists('$(VSData)\Mods')"
     />
     <ItemGroup>
-      <LangFiles Include="resources\assets\**\*" />
+      <AssetFiles Include="resources\assets\**\*" />
     </ItemGroup>
     <Copy
-      SourceFiles="@(LangFiles)"
-      DestinationFiles="@(LangFiles->'$(VSData)\Mods\assets\%(RecursiveDir)%(Filename)%(Extension)')"
+      SourceFiles="@(AssetFiles)"
+      DestinationFiles="@(AssetFiles->'$(ModFolder)\assets\%(RecursiveDir)%(Filename)%(Extension)')"
       SkipUnchangedFiles="true"
       Condition="Exists('$(VSData)\Mods')"
     />
-    <Message Text="Copied $(AssemblyName) to $(VSData)\Mods" Importance="high" Condition="Exists('$(VSData)\Mods')" />
+    <Message Text="Copied $(AssemblyName) to $(ModFolder)" Importance="high" Condition="Exists('$(VSData)\Mods')" />
   </Target>
 
 </Project>
