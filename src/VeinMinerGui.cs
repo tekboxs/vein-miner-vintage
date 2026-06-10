@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Vintagestory.API.Client;
+using Vintagestory.API.Config;
 
 namespace VeinMiner
 {
@@ -29,6 +30,12 @@ namespace VeinMiner
 
             var font = CairoFont.WhiteSmallText();
 
+            string titleText    = Lang.Get("veinminer:gui-title");
+            string prefixesText = Lang.Get("veinminer:gui-prefixes-label");
+            string maxBlocksTxt = Lang.Get("veinminer:gui-maxblocks-label");
+            string saveText     = Lang.Get("veinminer:gui-save");
+            string closeText    = Lang.Get("veinminer:gui-close");
+
             // All bounds relative to BeginChildElements area
             var prefixLabel  = ElementBounds.Fixed(0,   0,   cw,  22);
             var textArea     = ElementBounds.Fixed(0,   27,  cw,  150);
@@ -49,14 +56,14 @@ namespace VeinMiner
 
             SingleComposer = capi.Gui.CreateCompo("veinminercfg", dialogBounds)
                 .AddShadedDialogBG(bgBounds)
-                .AddDialogTitleBar("VeinMiner — Configurações", () => TryClose())
+                .AddDialogTitleBar(titleText, () => TryClose())
                 .BeginChildElements(bgBounds)
-                    .AddStaticText("Prefixos de blocos permitidos (um por linha):", font, prefixLabel)
+                    .AddStaticText(prefixesText, font, prefixLabel)
                     .AddTextArea(textArea, _ => { }, font, "prefixes")
-                    .AddStaticText("Máximo de blocos:", font, maxLabel)
+                    .AddStaticText(maxBlocksTxt, font, maxLabel)
                     .AddNumberInput(maxInput, _ => { }, font, "maxblocks")
-                    .AddSmallButton("Salvar",  OnSaveClick,           saveBtn)
-                    .AddSmallButton("Fechar",  () => { TryClose(); return true; }, closeBtn)
+                    .AddSmallButton(saveText,  OnSaveClick,                    saveBtn)
+                    .AddSmallButton(closeText, () => { TryClose(); return true; }, closeBtn)
                 .EndChildElements()
                 .Compose();
 

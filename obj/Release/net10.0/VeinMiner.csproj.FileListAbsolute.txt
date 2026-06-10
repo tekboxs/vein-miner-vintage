@@ -10,3 +10,4 @@ C:\Users\fuba\Documents\projects\vein-miner-vintage\obj\Release\net10.0\VeinMine
 C:\Users\fuba\Documents\projects\vein-miner-vintage\obj\Release\net10.0\refint\VeinMiner.dll
 C:\Users\fuba\Documents\projects\vein-miner-vintage\obj\Release\net10.0\VeinMiner.pdb
 C:\Users\fuba\Documents\projects\vein-miner-vintage\obj\Release\net10.0\ref\VeinMiner.dll
+C:\Users\fuba\Documents\projects\vein-miner-vintage\obj\Release\net10.0\VeinMiner.sourcelink.json

@@ -1,5 +1,6 @@
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 
 namespace VeinMiner
 {
@@ -24,7 +25,7 @@ namespace VeinMiner
 
             api.Input.RegisterHotKey(
                 "veinminergui",
-                "Abrir VeinMiner Config",
+                Lang.Get("veinminer:hotkey-name"),
                 GlKeys.F7,
                 HotkeyType.GUIOrOtherControls
             );

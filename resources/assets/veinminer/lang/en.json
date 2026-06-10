@@ -1,0 +1,8 @@
+{
+  "veinminer:gui-title": "Vein Miner — Settings",
+  "veinminer:gui-prefixes-label": "Allowed block prefixes (one per line):",
+  "veinminer:gui-maxblocks-label": "Maximum blocks:",
+  "veinminer:gui-save": "Save",
+  "veinminer:gui-close": "Close",
+  "veinminer:hotkey-name": "Open VeinMiner Settings"
+}

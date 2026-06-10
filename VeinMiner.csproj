@@ -23,7 +23,7 @@
     </Reference>
   </ItemGroup>
 
-  <!-- Auto-copy the compiled DLL to the Mods folder for quick testing -->
+  <!-- Auto-copy DLL + assets to Mods folder for quick testing -->
   <Target Name="CopyToMods" AfterTargets="Build">
     <Copy
       SourceFiles="$(OutputPath)$(AssemblyName).dll"
@@ -31,7 +31,16 @@
       SkipUnchangedFiles="true"
       Condition="Exists('$(VSData)\Mods')"
     />
-    <Message Text="Copied $(AssemblyName).dll to $(VSData)\Mods" Importance="high" Condition="Exists('$(VSData)\Mods')" />
+    <ItemGroup>
+      <LangFiles Include="resources\assets\**\*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(LangFiles)"
+      DestinationFiles="@(LangFiles->'$(VSData)\Mods\assets\%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true"
+      Condition="Exists('$(VSData)\Mods')"
+    />
+    <Message Text="Copied $(AssemblyName) to $(VSData)\Mods" Importance="high" Condition="Exists('$(VSData)\Mods')" />
   </Target>
 
 </Project>
