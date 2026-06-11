@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ProtoBuf;
 
 namespace VeinMiner
@@ -23,5 +23,9 @@ namespace VeinMiner
         [ProtoMember(2)] public List<string> AllowedBlockPrefixes { get; set; } = new();
 
         [ProtoMember(3)] public MiningMode Mode { get; set; } = MiningMode.Vein;
+
+        // Vein mode: when the connected chain runs out, search up to this many
+        // blocks away from the last found block to bridge gaps. 0 = off, max 10.
+        [ProtoMember(4)] public int ExpansionRadius { get; set; } = 0;
     }
 }

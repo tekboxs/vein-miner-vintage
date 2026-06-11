@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
@@ -6,7 +6,7 @@ using Vintagestory.API.Server;
 
 [assembly: Vintagestory.API.Common.ModInfo(
     name: "Vein Miner",
-    modID: "veinminer",
+    modID: "veinminerrevamp",
     Version = "1.2.0",
     Description = "Hold sneak while breaking a block to activate the selected mining mode. Configurable via F7.",
     Authors = new[] { "fuba" }
@@ -43,14 +43,14 @@ namespace VeinMiner
         public override void StartServerSide(ICoreServerAPI api)
         {
             sapi = api;
-            defaultConfig = api.LoadModConfig<VeinMinerConfig>("veinminer.json") ?? new VeinMinerConfig();
+            defaultConfig = api.LoadModConfig<VeinMinerConfig>("veinminerrevamp.json") ?? new VeinMinerConfig();
             if (defaultConfig.AllowedBlockPrefixes.Count == 0)
                 defaultConfig.AllowedBlockPrefixes = new() { "game:ore-" };
-            api.StoreModConfig(defaultConfig, "veinminer.json");
+            api.StoreModConfig(defaultConfig, "veinminerrevamp.json");
 
-            playerConfigs = api.LoadModConfig<Dictionary<string, VeinMinerConfig>>("veinminer-players.json") ?? new();
+            playerConfigs = api.LoadModConfig<Dictionary<string, VeinMinerConfig>>("veinminerrevamp-players.json") ?? new();
 
-            channel = api.Network.RegisterChannel("veinminer")
+            channel = api.Network.RegisterChannel("veinminerrevamp")
                 .RegisterMessageType<VeinMinerConfig>()
                 .SetMessageHandler<VeinMinerConfig>(OnPlayerConfigReceived);
 
@@ -66,7 +66,7 @@ namespace VeinMiner
         private void OnPlayerConfigReceived(IServerPlayer player, VeinMinerConfig packet)
         {
             playerConfigs[player.PlayerUID] = packet;
-            sapi!.StoreModConfig(playerConfigs, "veinminer-players.json");
+            sapi!.StoreModConfig(playerConfigs, "veinminerrevamp-players.json");
         }
 
         private VeinMinerConfig GetPlayerConfig(string uid)
@@ -89,7 +89,8 @@ namespace VeinMiner
                 Block brokenBlock = sapi!.World.GetBlock(oldblockId);
                 if (brokenBlock?.Code == null) return;
                 if (!IsAllowed(brokenBlock, cfg)) return;
-                toBreak = FindConnectedBlocks(blockSel.Position, brokenBlock.Code.ToString(), cfg.MaxBlocks);
+                int expansionRadius = Math.Clamp(cfg.ExpansionRadius, 0, 10);
+                toBreak = FindConnectedBlocks(blockSel.Position, brokenBlock.Code.ToString(), cfg.MaxBlocks, expansionRadius);
             }
             else
             {
@@ -97,6 +98,9 @@ namespace VeinMiner
             }
 
             if (toBreak.Count == 0) return;
+
+            // All drops from the vein consolidate at the first broken block's position.
+            Vec3d originDropPos = blockSel.Position.ToVec3d().Add(0.5, 0.5, 0.5);
 
             foreach (BlockPos pos in toBreak)
             {
@@ -107,12 +111,27 @@ namespace VeinMiner
                     if (blockAtPos == null || blockAtPos.Id == 0) continue;
                     if (blockAtPos.RequiredMiningTier > toolTier) continue;
 
+                    // Snapshot item entities near this block before breaking so we can
+                    // identify which ones were spawned by OnBlockBroken below.
+                    Vec3d blockCenter = pos.ToVec3d().Add(0.5, 0.5, 0.5);
+                    var entitiesBefore = new HashSet<long>();
+                    foreach (var e in sapi.World.GetEntitiesAround(blockCenter, 1.5f, 1.5f, e => e is EntityItem))
+                        entitiesBefore.Add(e.EntityId);
+
                     // OnBlockBroken runs the full drop pipeline (BlockBehaviors included),
-                    // so ore blocks yield ore items instead of the raw block.
+                    // so ore blocks yield ore items and XSkills XP is granted via behaviors.
                     blockAtPos.OnBlockBroken(sapi.World, pos, byPlayer);
 
                     sapi.World.BlockAccessor.SetBlock(0, pos);
                     sapi.World.BlockAccessor.TriggerNeighbourBlockUpdate(pos);
+
+                    // Teleport newly spawned drops to the origin so the entire vein's
+                    // loot consolidates in one spot instead of scattering across the vein.
+                    foreach (var e in sapi.World.GetEntitiesAround(blockCenter, 1.5f, 1.5f,
+                        e => e is EntityItem && !entitiesBefore.Contains(e.EntityId)))
+                    {
+                        e.TeleportToDouble(originDropPos.X, originDropPos.Y, originDropPos.Z);
+                    }
 
                     if (toolSlot?.Itemstack != null)
                     {
@@ -133,7 +152,7 @@ namespace VeinMiner
         {
             // The face the player hit is facing toward them, so its opposite is the dig direction.
             // For non-horizontal faces (e.g. player looks down at the floor), derive facing from yaw:
-            // in VS, ViewVector = (sin(yaw), ..., cos(yaw)), so south=0, east=π/2, north=π, west=3π/2.
+            // in VS, ViewVector = (sin(yaw), ..., cos(yaw)), so south=0, east=Ï€/2, north=Ï€, west=3Ï€/2.
             BlockFacing facing;
             if (blockSel.Face.IsHorizontal)
             {
@@ -214,19 +233,31 @@ namespace VeinMiner
                 result.Add(pos.Copy());
         }
 
-        private List<BlockPos> FindConnectedBlocks(BlockPos origin, string targetCode, int maxBlocks)
+        private List<BlockPos> FindConnectedBlocks(BlockPos origin, string targetCode, int maxBlocks, int expansionRadius)
         {
             var result = new List<BlockPos>();
             var visited = new HashSet<BlockPos> { origin.Copy() };
             var queue = new Queue<BlockPos>();
             queue.Enqueue(origin.Copy());
 
-            while (queue.Count > 0 && result.Count < maxBlocks)
+            while (result.Count < maxBlocks)
             {
+                if (queue.Count == 0)
+                {
+                    // Chain exhausted: optionally bridge gaps by scanning outward
+                    // from the last found block for more blocks of the same type.
+                    BlockPos seed = result.Count > 0 ? result[result.Count - 1] : origin;
+                    if (expansionRadius < 2 || !TryExpandSearch(seed, targetCode, expansionRadius, visited, queue, result, maxBlocks))
+                        break;
+                    continue;
+                }
+
                 BlockPos current = queue.Dequeue();
 
                 foreach (Vec3i offset in Neighbors)
                 {
+                    if (result.Count >= maxBlocks) break;
+
                     BlockPos neighbor = current.AddCopy(offset.X, offset.Y, offset.Z);
                     if (visited.Contains(neighbor)) continue;
                     visited.Add(neighbor);
@@ -241,6 +272,42 @@ namespace VeinMiner
             }
 
             return result;
+        }
+
+        // Scans cube shells of growing radius around the seed (nearest first) and
+        // seeds the BFS with every match found at the first non-empty distance.
+        // Radius 1 is the BFS's own neighborhood, so shells start at 2.
+        private bool TryExpandSearch(BlockPos seed, string targetCode, int radius, HashSet<BlockPos> visited, Queue<BlockPos> queue, List<BlockPos> result, int maxBlocks)
+        {
+            for (int r = 2; r <= radius; r++)
+            {
+                bool foundAny = false;
+
+                for (int x = -r; x <= r; x++)
+                for (int y = -r; y <= r; y++)
+                for (int z = -r; z <= r; z++)
+                {
+                    // Only the outer shell; inner cube was covered by smaller radii.
+                    if (Math.Max(Math.Abs(x), Math.Max(Math.Abs(y), Math.Abs(z))) != r) continue;
+
+                    BlockPos pos = seed.AddCopy(x, y, z);
+                    if (visited.Contains(pos)) continue;
+
+                    Block block = sapi!.World.BlockAccessor.GetBlock(pos);
+                    if (block?.Code == null) continue;
+                    if (block.Code.ToString() != targetCode) continue;
+
+                    visited.Add(pos);
+                    result.Add(pos);
+                    queue.Enqueue(pos.Copy());
+                    foundAny = true;
+                    if (result.Count >= maxBlocks) return true;
+                }
+
+                if (foundAny) return true;
+            }
+
+            return false;
         }
 
         private static bool IsAllowed(Block block, VeinMinerConfig cfg)

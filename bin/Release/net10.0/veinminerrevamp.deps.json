@@ -6,15 +6,15 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v10.0": {
-      "VeinMiner/1.0.0": {
+      "veinminerrevamp/1.0.0": {
         "runtime": {
-          "VeinMiner.dll": {}
+          "veinminerrevamp.dll": {}
         }
       }
     }
   },
   "libraries": {
-    "VeinMiner/1.0.0": {
+    "veinminerrevamp/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
