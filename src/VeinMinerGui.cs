@@ -101,6 +101,10 @@ namespace VeinMiner
 
             // Row 3: hotkey hint
             var hotkeyHint = ElementBounds.Fixed(0, y, cw, 22);
+            y += 22;
+
+            // Row 3b: vertical-digging hint (tunnel modes only)
+            var verticalHint = ElementBounds.Fixed(0, y, cw, 22);
             y += 30;
 
             // Row 4: Prefix textarea label
@@ -149,6 +153,7 @@ namespace VeinMiner
                     .AddStaticText(modeLabelTxt, labelFont, modeLabel)
                     .AddDropDown(ModeValues, modeNames, selectedMode, (_, _) => { }, modeDropdown, font, "mode")
                     .AddStaticText(Lang.Get("veinminerrevamp:gui-hotkeys-hint"), hintFont, hotkeyHint)
+                    .AddStaticText(Lang.Get("veinminerrevamp:gui-vertical-hint"), hintFont, verticalHint)
                     .AddStaticText(prefixesText, labelFont, prefixLabel);
 
             if (targetedBlock != null)

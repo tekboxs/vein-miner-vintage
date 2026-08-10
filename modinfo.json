@@ -2,8 +2,8 @@
   "type": "code",
   "modId": "veinminerrevamp",
   "name": "Vein Miner",
-  "version": "1.3.0",
-  "description": "Hold sneak while breaking a block to activate the selected mining mode (vein, tunnels, staircases). Configurable via F7.",
+  "version": "1.4.0",
+  "description": "Hold sneak while breaking a block to activate the selected mining mode (vein, tunnels, staircases). In tunnel modes, break the floor or ceiling to dig a vertical shaft. Configurable via F7.",
   "authors": [ "fuba" ],
   "dependencies": {
     "game": "1.22.0"

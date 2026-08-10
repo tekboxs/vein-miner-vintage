@@ -16,6 +16,7 @@
   "gui-no-target-hint": "Dica: mire em um bloco antes de abrir (F7) para adicioná-lo com um clique.",
   "gui-autosave-hint": "Alterações são salvas automaticamente ao fechar. Cancelar descarta.",
   "gui-hotkeys-hint": "Shift+V: trocar modo  •  Shift+F7: adicionar bloco mirado",
+  "gui-vertical-hint": "Modos túnel: quebre o chão (↓) ou o teto (↑) para cavar um poço vertical.",
   "hotkey-name": "Abrir Configurações do VeinMiner",
   "hotkey-cycle-name": "VeinMiner: alternar modo de mineração",
   "hotkey-addblock-name": "VeinMiner: adicionar bloco mirado à whitelist",

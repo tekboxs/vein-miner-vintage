@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("veinminerrevamp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cf160fe63182affbb3aa7e6d9fd9718846e5cfe2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bd4d883aa42c90ee9924131ca00e03386b500734")]
 [assembly: System.Reflection.AssemblyProductAttribute("veinminerrevamp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("veinminerrevamp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

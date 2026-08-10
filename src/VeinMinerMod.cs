@@ -7,7 +7,7 @@ using Vintagestory.API.Server;
 [assembly: Vintagestory.API.Common.ModInfo(
     name: "Vein Miner",
     modID: "veinminerrevamp",
-    Version = "1.2.0",
+    Version = "1.4.0",
     Description = "Hold sneak while breaking a block to activate the selected mining mode. Configurable via F7.",
     Authors = new[] { "fuba" }
 )]
@@ -150,24 +150,21 @@ namespace VeinMiner
         // MaxBlocks acts as tunnel depth (steps). Does not check block type prefixes.
         private List<BlockPos> FindTunnelBlocks(BlockSelection blockSel, IServerPlayer player, VeinMinerConfig cfg)
         {
+            // Hitting a horizontal face digs horizontally; hitting the top/bottom face digs
+            // a vertical shaft (floor = down, ceiling = up), so a ladder access needs no extra mode.
+            // The staircase modes are excluded: they are always started by looking down/up at a
+            // block, so a face-based shaft would replace their intended sloped tunnel.
+            if (!blockSel.Face.IsHorizontal
+                && cfg.Mode != MiningMode.MiningTunnel
+                && cfg.Mode != MiningMode.EscapeTunnel)
+            {
+                return FindVerticalShaftBlocks(blockSel, player, cfg);
+            }
+
             // The face the player hit is facing toward them, so its opposite is the dig direction.
-            // For non-horizontal faces (e.g. player looks down at the floor), derive facing from yaw:
-            // in VS, ViewVector = (sin(yaw), ..., cos(yaw)), so south=0, east=Ï€/2, north=Ï€, west=3Ï€/2.
-            BlockFacing facing;
-            if (blockSel.Face.IsHorizontal)
-            {
-                facing = blockSel.Face.Opposite;
-            }
-            else
-            {
-                float yaw = player.Entity.Pos.Yaw;
-                double fx = Math.Sin(yaw);
-                double fz = Math.Cos(yaw);
-                if (Math.Abs(fx) >= Math.Abs(fz))
-                    facing = fx > 0 ? BlockFacing.EAST : BlockFacing.WEST;
-                else
-                    facing = fz > 0 ? BlockFacing.SOUTH : BlockFacing.NORTH;
-            }
+            BlockFacing facing = blockSel.Face.IsHorizontal
+                ? blockSel.Face.Opposite
+                : HorizontalFacingFromYaw(player);
 
             BlockPos origin = blockSel.Position;
             int dx = facing.Normali.X;
@@ -224,6 +221,58 @@ namespace VeinMiner
             }
 
             return result;
+        }
+
+        // Vertical shafts: the face the player hit points back at them, so its opposite
+        // is the dig direction (top face = dig down, bottom face = dig up).
+        // The tunnel width is kept and the second block of the 1x2 profile is laid out
+        // along the player's horizontal facing, giving a 1x2 shaft to climb through.
+        private List<BlockPos> FindVerticalShaftBlocks(BlockSelection blockSel, IServerPlayer player, VeinMinerConfig cfg)
+        {
+            int dy = -blockSel.Face.Normali.Y;
+            BlockFacing facing = HorizontalFacingFromYaw(player);
+            int dx = facing.Normali.X;
+            int dz = facing.Normali.Z;
+
+            BlockPos origin = blockSel.Position;
+            var result = new List<BlockPos>();
+            int depth = cfg.MaxBlocks;
+
+            switch (cfg.Mode)
+            {
+                case MiningMode.Tunnel1x2:
+                    for (int i = 0; i < depth; i++)
+                    {
+                        TryAdd(origin.AddCopy(0,  dy * i, 0),  result);
+                        TryAdd(origin.AddCopy(dx, dy * i, dz), result);
+                    }
+                    break;
+
+                case MiningMode.Tunnel3x3:
+                    for (int i = 0; i < depth; i++)
+                        for (int x = -1; x <= 1; x++)
+                            for (int z = -1; z <= 1; z++)
+                                TryAdd(origin.AddCopy(x, dy * i, z), result);
+                    break;
+
+                default: // Tunnel1x1
+                    for (int i = 0; i < depth; i++)
+                        TryAdd(origin.AddCopy(0, dy * i, 0), result);
+                    break;
+            }
+
+            return result;
+        }
+
+        // In VS, ViewVector = (sin(yaw), ..., cos(yaw)), so south=0, east=PI/2, north=PI, west=3PI/2.
+        private static BlockFacing HorizontalFacingFromYaw(IServerPlayer player)
+        {
+            float yaw = player.Entity.Pos.Yaw;
+            double fx = Math.Sin(yaw);
+            double fz = Math.Cos(yaw);
+            if (Math.Abs(fx) >= Math.Abs(fz))
+                return fx > 0 ? BlockFacing.EAST : BlockFacing.WEST;
+            return fz > 0 ? BlockFacing.SOUTH : BlockFacing.NORTH;
         }
 
         private void TryAdd(BlockPos pos, List<BlockPos> result)

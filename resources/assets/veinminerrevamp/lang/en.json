@@ -16,6 +16,7 @@
   "gui-no-target-hint": "Tip: aim at a block before opening (F7) to add it with one click.",
   "gui-autosave-hint": "Changes are saved automatically on close. Cancel discards them.",
   "gui-hotkeys-hint": "Shift+V: cycle mode  •  Shift+F7: whitelist targeted block",
+  "gui-vertical-hint": "Tunnel modes: break the floor (↓) or the ceiling (↑) to dig a vertical shaft.",
   "hotkey-name": "Open VeinMiner Settings",
   "hotkey-cycle-name": "VeinMiner: cycle mining mode",
   "hotkey-addblock-name": "VeinMiner: whitelist targeted block",
